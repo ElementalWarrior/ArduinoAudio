@@ -57,7 +57,7 @@ const USB_Descriptor_Device_t PROGMEM DeviceDescriptor =
 	.Endpoint0Size          = FIXED_CONTROL_ENDPOINT_SIZE,
 
 	.VendorID               = 0x03EB,
-	.ProductID              = 0x2046,
+	.ProductID              = 0x3068,
 	.ReleaseNumber          = VERSION_BCD(0,0,2),
 
 	.ManufacturerStrIndex   = STRING_ID_Manufacturer,
@@ -259,10 +259,10 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 		.Audio_AudioFormatSampleRates =
 			{
 				AUDIO_SAMPLE_FREQ(8000),
-				AUDIO_SAMPLE_FREQ(11025),
-				AUDIO_SAMPLE_FREQ(22050),
-				AUDIO_SAMPLE_FREQ(44100),
-				AUDIO_SAMPLE_FREQ(48000),
+				// AUDIO_SAMPLE_FREQ(11025),
+				// AUDIO_SAMPLE_FREQ(22050),
+				// AUDIO_SAMPLE_FREQ(44100),
+				// AUDIO_SAMPLE_FREQ(48000),
 			},
 
 
@@ -273,7 +273,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 					.Header              = {.Size = sizeof(USB_Audio_Descriptor_StreamEndpoint_Std_t), .Type = DTYPE_Endpoint},
 
 					.EndpointAddress     = AUDIO_STREAM_OUT_EPADDR,
-					.Attributes          = (EP_TYPE_ISOCHRONOUS | ENDPOINT_ATTR_ASYNC | ENDPOINT_USAGE_DATA),
+					.Attributes          = (EP_TYPE_ISOCHRONOUS | ENDPOINT_ATTR_SYNC | ENDPOINT_USAGE_DATA),
 					.EndpointSize        = AUDIO_STREAM_OUT_EPSIZE,
 					.PollingIntervalMS   = 0x01
 				},
@@ -353,7 +353,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 				.Subtype                  = AUDIO_DSUBTYPE_CSInterface_FormatType,
 
 				.FormatType               = 0x01,
-				.Channels                 = 0x02,
+				.Channels                 = 0x01,
 
 				.SubFrameSize             = 0x02,
 				.BitResolution            = 16,
@@ -364,10 +364,10 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 		.Audio_AudioFormatSampleRates2 =
 			{
 				AUDIO_SAMPLE_FREQ(8000),
-				AUDIO_SAMPLE_FREQ(11025),
-				AUDIO_SAMPLE_FREQ(22050),
-				AUDIO_SAMPLE_FREQ(44100),
-				AUDIO_SAMPLE_FREQ(48000),
+				// AUDIO_SAMPLE_FREQ(11025),
+				// AUDIO_SAMPLE_FREQ(22050),
+				// AUDIO_SAMPLE_FREQ(44100),
+				// AUDIO_SAMPLE_FREQ(48000),
 			},
 
 	.Audio_In_StreamEndpoint =
@@ -377,7 +377,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 					.Header              = {.Size = sizeof(USB_Audio_Descriptor_StreamEndpoint_Std_t), .Type = DTYPE_Endpoint},
 
 					.EndpointAddress     = AUDIO_STREAM_IN_EPADDR,
-					.Attributes          = (EP_TYPE_ISOCHRONOUS | ENDPOINT_ATTR_ASYNC | ENDPOINT_USAGE_DATA),
+					.Attributes          = (EP_TYPE_ISOCHRONOUS | ENDPOINT_ATTR_SYNC | ENDPOINT_USAGE_DATA),
 					.EndpointSize        = AUDIO_STREAM_IN_EPSIZE,
 					.PollingIntervalMS   = 0x01
 				},

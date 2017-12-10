@@ -1,29 +1,6 @@
 {
     "configurations": [
         {
-            "name": "Mac",
-            "includePath": [
-                "/usr/include",
-                "/usr/local/include",
-                "${workspaceRoot}"
-            ],
-            "defines": [],
-            "intelliSenseMode": "clang-x64",
-            "browse": {
-                "path": [
-                    "/usr/include",
-                    "/usr/local/include",
-                    "${workspaceRoot}"
-                ],
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": ""
-            },
-            "macFrameworkPath": [
-                "/System/Library/Frameworks",
-                "/Library/Frameworks"
-            ]
-        },
-        {
             "name": "Linux",
             "includePath": [
                 "/usr/include/c++/5",
@@ -59,7 +36,7 @@
         {
             "name": "Win32",
             "includePath": [
-                "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
+                "C:/Users/James/Downloads/avr8-gnu-toolchain",
                 "C:/Projects/lufa-LUFA-170418",
                 "${workspaceRoot}"
             ],
@@ -70,7 +47,7 @@
             "intelliSenseMode": "msvc-x64",
             "browse": {
                 "path": [
-                    "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include/*",
+                    "C:/Users/James/Downloads/avr8-gnu-toolchain",
                     "C:/Projects/lufa-LUFA-170418",
                     "C:/Projects/lufa-LUFA-170418/*",
                     "${workspaceRoot}"

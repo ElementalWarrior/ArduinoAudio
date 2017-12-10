@@ -45,12 +45,12 @@
 
 	/* Macros: */
 		/** Endpoint address of the Audio isochronous streaming data IN endpoint. */
-		#define AUDIO_STREAM_OUT_EPADDR           (ENDPOINT_DIR_OUT | 1)
-		#define AUDIO_STREAM_IN_EPADDR           (ENDPOINT_DIR_IN | 2)
+		#define AUDIO_STREAM_OUT_EPADDR           (ENDPOINT_DIR_OUT | 3)
+		#define AUDIO_STREAM_IN_EPADDR           (ENDPOINT_DIR_IN | 4)
 
 		/** Endpoint size in bytes of the Audio isochronous streaming data endpoint. */
-		#define AUDIO_STREAM_OUT_EPSIZE           256
-		#define AUDIO_STREAM_IN_EPSIZE           256
+		#define AUDIO_STREAM_OUT_EPSIZE           32
+		#define AUDIO_STREAM_IN_EPSIZE           32
 
 				typedef struct
 				{
@@ -69,6 +69,8 @@
 					uint8_t                 InterfaceNumber1; /**< Interface number of the associated Audio Streaming interface. */
 					uint8_t                 InterfaceNumber2; /**< Interface number of the associated Audio Streaming interface. */
 				} ATTR_PACKED USB_Audio_Descriptor_Interface_AC_2_t;
+
+				
 	/* Type Defines: */
 		/** Type define for the device configuration descriptor structure. This must be defined in the
 		 *  application code, as the configuration descriptor contains several sub-descriptors which
@@ -92,14 +94,14 @@
 			USB_Descriptor_Interface_t                Audio_Out_StreamInterface;
 			USB_Audio_Descriptor_Interface_AS_t       Audio_Out_StreamInterface_SPC;
 			USB_Audio_Descriptor_Format_t             Audio_AudioFormat;
-			USB_Audio_SampleFreq_t                    Audio_AudioFormatSampleRates[5];
+			USB_Audio_SampleFreq_t                    Audio_AudioFormatSampleRates[1];
 			USB_Audio_Descriptor_StreamEndpoint_Std_t Audio_Out_StreamEndpoint;
 			USB_Audio_Descriptor_StreamEndpoint_Spc_t Audio_Out_StreamEndpoint_SPC;
 			USB_Descriptor_Interface_t                Audio_Extra_StreamInterface2;
 			USB_Descriptor_Interface_t                Audio_In_StreamInterface;
 			USB_Audio_Descriptor_Interface_AS_t       Audio_In_StreamInterface_SPC;
 			USB_Audio_Descriptor_Format_t             Audio_AudioFormat2;
-			USB_Audio_SampleFreq_t                    Audio_AudioFormatSampleRates2[5];
+			USB_Audio_SampleFreq_t                    Audio_AudioFormatSampleRates2[1];
 			USB_Audio_Descriptor_StreamEndpoint_Std_t Audio_In_StreamEndpoint;
 			USB_Audio_Descriptor_StreamEndpoint_Spc_t Audio_In_StreamEndpoint_SPC;
 		} USB_Descriptor_Configuration_t;

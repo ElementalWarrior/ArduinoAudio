@@ -24,7 +24,7 @@
         {
             "label": "flash",
             "type": "shell",
-            "command": "~/Desktop/lufa-LUFA-170418/Demos/Device/ClassDriver/AudioOutput/flash.sh",
+            "command": "./flash.sh",
             "group": "build"
         }
     ]

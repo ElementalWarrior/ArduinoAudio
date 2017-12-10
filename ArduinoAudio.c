@@ -51,7 +51,7 @@ USB_ClassInfo_Audio_Device_t Speaker_Audio_Interface =
 						.Address          = AUDIO_STREAM_OUT_EPADDR,
 						.Size             = AUDIO_STREAM_OUT_EPSIZE,
 						.Banks            = 2,
-					},
+					}
 			},
 	};
 
@@ -71,8 +71,8 @@ USB_ClassInfo_Audio_Device_t Speaker_Audio_Interface =
  	};
 
 /** Current audio sampling frequency of the streaming audio endpoint. */
-static uint32_t CurrentAudioSampleFrequency = 48000;
-
+static uint32_t CurrentAudioSampleFrequency = 8000;
+static uint32_t baud = 500000;
 
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
@@ -104,10 +104,18 @@ void SetupHardware(void)
 #endif
 
 	/* Hardware Initialization */
+	Serial_Init(baud, false);
+	LEDs_Init();
 	USB_Init();
+
+	/* Sample reload timer initialization */
+	TIMSK0  = (1 << OCIE0A);
+	OCR0A   = ((F_CPU / 8 / CurrentAudioSampleFrequency) - 1);
+	TCCR0A  = (1 << WGM01);  // CTC mode
+	TCCR0B  = (1 << CS01);   // Fcpu/8 speed
 }
 
-/** ISR to handle the reloading of the PWM timer with the next sample. */
+/** ISR to handle sending the sample over USART to the atmega328 */
 ISR(TIMER0_COMPA_vect, ISR_BLOCK)
 {
 	uint8_t PrevEndpoint = Endpoint_GetCurrentEndpoint();
@@ -121,19 +129,32 @@ ISR(TIMER0_COMPA_vect, ISR_BLOCK)
 
 		/* Mix the two channels together to produce a mono, 8-bit sample */
 		int8_t MixedSample_8Bit = (((int16_t)LeftSample_8Bit + (int16_t)RightSample_8Bit) >> 1);
-
-		#if defined(AUDIO_OUT_MONO)
-		/* Load the sample into the PWM timer channel */
-		OCR1A = (MixedSample_8Bit ^ (1 << 7));
-		#elif defined(AUDIO_OUT_STEREO)
-		/* Load the dual 8-bit samples into the PWM timer channels */
-		OCR1A = (LeftSample_8Bit  ^ (1 << 7));
-		OCR1B = (RightSample_8Bit ^ (1 << 7));
-		#elif defined(AUDIO_OUT_PORTC)
-		/* Load the 8-bit mixed sample into PORTC */
-		PORTC = MixedSample_8Bit;
-		#endif
+ 
+		if(UCSR1A & (1<<UDRE1)) { 
+			//turn on LED 1 when we actually send a sample over USART for debug purposes
+			LEDs_TurnOnLEDs(LEDS_LED1);
+			UDR1 = MixedSample_8Bit ^ (1 << 7);
+		}
 	}
+
+	// Endpoint_SelectEndpoint(Mic_Audio_Interface.Config.DataINEndpoint.Address);
+	
+	// LEDs_SetAllLEDs(!(Speaker_Audio_Interface.State.InterfaceEnabled) ? LEDMASK_USB_READY : LEDS_NO_LEDS);
+	/* Check that the USB bus is ready for the next sample to write */
+	// if (Audio_Device_IsReadyForNextSample(&Mic_Audio_Interface))
+	// {
+	// 		LEDs_TurnOnLEDs(LEDS_LED1);
+	// 	int16_t AudioSample;
+	// 	static uint8_t SquareWaveSampleCount;
+	// 	static int16_t CurrentWaveValue;
+
+	// 	/* In test tone mode, generate a square wave at 1/256 of the sample rate */
+	// 	if (SquareWaveSampleCount++ == 0xFF)
+	// 		CurrentWaveValue ^= 0x8000;
+			
+	// 	AudioSample = CurrentWaveValue;
+	// 	Audio_Device_WriteSample16(&Mic_Audio_Interface, 0);
+	// }
 
 	Endpoint_SelectEndpoint(PrevEndpoint);
 }
@@ -147,24 +168,6 @@ void EVENT_USB_Device_Connect(void)
 	OCR0A   = ((F_CPU / 8 / CurrentAudioSampleFrequency) - 1);
 	TCCR0A  = (1 << WGM01);  // CTC mode
 	TCCR0B  = (1 << CS01);   // Fcpu/8 speed
-
-	#if defined(AUDIO_OUT_MONO)
-	/* Set speaker as output */
-	DDRC   |= (1 << 6);
-	#elif defined(AUDIO_OUT_STEREO)
-	/* Set speakers as outputs */
-	DDRC   |= ((1 << 6) | (1 << 5));
-	#elif defined(AUDIO_OUT_PORTC)
-	/* Set PORTC as outputs */
-	DDRC   |= 0xFF;
-	#endif
-
-	#if (defined(AUDIO_OUT_MONO) || defined(AUDIO_OUT_STEREO))
-	/* PWM speaker timer initialization */
-	TCCR1A  = ((1 << WGM10) | (1 << COM1A1) | (1 << COM1A0)
-	        | (1 << COM1B1) | (1 << COM1B0)); // Set on match, clear on TOP
-	TCCR1B  = ((1 << WGM12) | (1 << CS10));  // Fast 8-Bit PWM, F_CPU speed
-	#endif
 }
 
 /** Event handler for the library USB Disconnection event. */
@@ -172,22 +175,6 @@ void EVENT_USB_Device_Disconnect(void)
 {
 	/* Stop the sample reload timer */
 	TCCR0B = 0;
-
-	#if (defined(AUDIO_OUT_MONO) || defined(AUDIO_OUT_STEREO))
-	/* Stop the PWM generation timer */
-	TCCR1B = 0;
-	#endif
-
-	#if defined(AUDIO_OUT_MONO)
-	/* Set speaker as input to reduce current draw */
-	DDRC  &= ~(1 << 6);
-	#elif defined(AUDIO_OUT_STEREO)
-	/* Set speakers as inputs to reduce current draw */
-	DDRC  &= ~((1 << 6) | (1 << 5));
-	#elif defined(AUDIO_OUT_PORTC)
-	/* Set PORTC low */
-	PORTC = 0x00;
-	#endif
 }
 
 /** Event handler for the library USB Configuration Changed event. */
@@ -198,7 +185,9 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 	ConfigSuccess &= Audio_Device_ConfigureEndpoints(&Speaker_Audio_Interface);
 	ConfigSuccess &= Audio_Device_ConfigureEndpoints(&Mic_Audio_Interface);
 
-	LEDs_SetAllLEDs(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
+	LEDs_SetAllLEDs(ConfigSuccess ? LEDS_LED2 : LEDS_NO_LEDS);
+}
+void EVENT_USB_Device_UnhandledControlRequest(void) {
 }
 
 /** Event handler for the library USB Control Request reception event. */
@@ -238,7 +227,8 @@ bool CALLBACK_Audio_Device_GetSetEndpointProperty(USB_ClassInfo_Audio_Device_t* 
                                                   uint8_t* Data)
 {
 	/* Check the requested endpoint to see if a supported endpoint is being manipulated */
-	if (EndpointAddress == Speaker_Audio_Interface.Config.DataOUTEndpoint.Address)
+	if (&AudioInterfaceInfo == &Speaker_Audio_Interface
+	  && EndpointAddress == Speaker_Audio_Interface.Config.DataOUTEndpoint.Address)
 	{
 		/* Check the requested control to see if a supported control is being manipulated */
 		if (EndpointControl == AUDIO_EPCONTROL_SamplingFreq)
@@ -274,7 +264,8 @@ bool CALLBACK_Audio_Device_GetSetEndpointProperty(USB_ClassInfo_Audio_Device_t* 
 	}
   //
 	// /* Check the requested endpoint to see if a supported endpoint is being manipulated */
-	if (EndpointAddress == Mic_Audio_Interface.Config.DataINEndpoint.Address)
+	if (&AudioInterfaceInfo == &Mic_Audio_Interface
+	  && EndpointAddress == Mic_Audio_Interface.Config.DataINEndpoint.Address)
 	{
 		/* Check the requested control to see if a supported control is being manipulated */
 		if (EndpointControl == AUDIO_EPCONTROL_SamplingFreq)
@@ -342,5 +333,6 @@ bool CALLBACK_Audio_Device_GetSetInterfaceProperty(USB_ClassInfo_Audio_Device_t*
                                                    uint8_t* Data)
 {
 	/* No audio interface entities in the device descriptor, thus no properties to get or set. */
+	// Audio_ClassRequests_t
 	return false;
 }
